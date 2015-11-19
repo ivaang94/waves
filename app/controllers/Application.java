@@ -116,16 +116,19 @@ public class Application extends Controller {
 
         Sound sound = Sound.find("_id", new ObjectId(id)).first();
 
+        if (null != sound && currentUser.email.equals(sound.user.email)) {
+            return sound;
+        }
+
         boolean valid = false;
-        if (null != sound && !sound.user.email.equals(currentUser.email)) {
+        if (null != sound) {
             for (Relation relation : relations) {
-                if (sound.user.email.equals(relation.friend.email)) {
+                if (relation.friend.email.equals(sound.user.email)
+                        || relation.user.email.equals(sound.user.email)) {
                     valid = true;
                     break;
                 }
             }
-        } else {
-            valid = true;
         }
 
         return valid ? sound : null;
@@ -266,11 +269,8 @@ public class Application extends Controller {
         if (null == relation && !currentUser().email.equals(email)) {
             redirect(Router.reverse("Application.home").url);
         } else {
-            if (currentUser().email.equals(email)) {
-                List<Sound> sounds = sounds(email);
-                renderArgs.put("sounds", sounds);
-            }
-
+            List<Sound> sounds = sounds(email);
+            renderArgs.put("sounds", sounds);
             renderArgs.put("filesOwner", user(email));
 
             render();
@@ -312,7 +312,7 @@ public class Application extends Controller {
                 }
                 Files.delete(file);
             } else {
-                flash.error("El archivo [%s] no es valido!");
+                flash.error("El archivo [%s] no es valido!", file.getName());
             }
         }
 
